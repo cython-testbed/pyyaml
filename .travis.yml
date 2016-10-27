@@ -22,7 +22,7 @@ matrix:
       env: TOXENV=pypy PYPY_VERSION=5.1
 
 install:
-    - pip install --install-option="--no-cython-compile" https://github.com/cython/cython/archive/master.zip
+    - pip install --install-option="--no-cython-compile" https://github.com/cython/cython/archive/0.25.1.zip
     - ./.travis/install.sh
 
 script:
