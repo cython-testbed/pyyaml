@@ -26,4 +26,5 @@ install:
     - ./.travis/install.sh
 
 script:
+  - source ~/.venv/bin/activate
   - tox
