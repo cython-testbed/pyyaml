@@ -2,9 +2,7 @@ language: python
 
 sudo: false
 
-cache:
-    directories:
-        - $HOME/.cache/pip
+cache: pip
 
 matrix:
   include:
@@ -18,13 +16,13 @@ matrix:
       env: TOXENV=py34
     - python: 3.5
       env: TOXENV=py35
+    - python: 3.6
+      env: TOXENV=py36
     - python: pypy
-      env: TOXENV=pypy PYPY_VERSION=5.1
+      env: TOXENV=pypy
 
 install:
     - pip install --install-option="--no-cython-compile" https://github.com/cython/cython/archive/19d890ecbf4d47f9114d32af646208187608e583.zip
-    - ./.travis/install.sh
+    - pip install tox
 
-script:
-  - source ~/.venv/bin/activate
-  - tox
+script: tox
