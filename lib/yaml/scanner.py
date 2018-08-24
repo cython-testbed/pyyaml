@@ -124,10 +124,13 @@ class Scanner(object):
 
     def peek_token(self):
         # Return the next token, but do not delete if from the queue.
+        # Return None if no more tokens.
         while self.need_more_tokens():
             self.fetch_more_tokens()
         if self.tokens:
             return self.tokens[0]
+        else:
+            return None
 
     def get_token(self):
         # Return the next token.
@@ -1172,6 +1175,7 @@ class Scanner(object):
         u' ':   u'\x20',
         u'\"':  u'\"',
         u'\\':  u'\\',
+        u'/':   u'/',
         u'N':   u'\x85',
         u'_':   u'\xA0',
         u'L':   u'\u2028',
@@ -1438,10 +1442,3 @@ class Scanner(object):
             self.forward()
             return ch
         return u''
-
-#try:
-#    import psyco
-#    psyco.bind(Scanner)
-#except ImportError:
-#    pass
-

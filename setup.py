@@ -1,6 +1,6 @@
 
 NAME = 'PyYAML'
-VERSION = '3.12'
+VERSION = '4.1'
 DESCRIPTION = "YAML parser and emitter for Python"
 LONG_DESCRIPTION = """\
 YAML is a data serialization format designed for human readability
@@ -18,8 +18,8 @@ AUTHOR = "Kirill Simonov"
 AUTHOR_EMAIL = 'xi@resolvent.net'
 LICENSE = "MIT"
 PLATFORMS = "Any"
-URL = "http://pyyaml.org/wiki/PyYAML"
-DOWNLOAD_URL = "http://pyyaml.org/download/pyyaml/%s-%s.tar.gz" % (NAME, VERSION)
+URL = "https://github.com/yaml/pyyaml"
+DOWNLOAD_URL = "https://pypi.org/project/PyYAML/"
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -33,6 +33,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.4",
     "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -76,12 +77,16 @@ if 'setuptools.extension' in sys.modules:
     sys.modules['distutils.command.build_ext'].Extension = _Extension
 
 with_cython = False
+if 'sdist' in sys.argv:
+    # we need cython here
+    with_cython = True
 try:
     from Cython.Distutils.extension import Extension as _Extension
     from Cython.Distutils import build_ext as _build_ext
     with_cython = True
 except ImportError:
-    pass
+    if with_cython:
+        raise
 
 try:
     from wheel.bdist_wheel import bdist_wheel
@@ -204,63 +209,16 @@ class build_ext(_build_ext):
         self.check_extensions_list(self.extensions)
         for ext in self.extensions:
             with_ext = self.distribution.ext_status(ext)
-            if with_ext is None:
-                with_ext = self.check_extension_availability(ext)
-            if not with_ext:
+            if with_ext is not None and not with_ext:
                 continue
             if with_cython:
                 ext.sources = self.cython_sources(ext.sources, ext)
-            self.build_extension(ext)
-
-    def check_extension_availability(self, ext):
-        cache = os.path.join(self.build_temp, 'check_%s.out' % ext.feature_name)
-        if not self.force and os.path.isfile(cache):
-            data = open(cache).read().strip()
-            if data == '1':
-                return True
-            elif data == '0':
-                return False
-        mkpath(self.build_temp)
-        src = os.path.join(self.build_temp, 'check_%s.c' % ext.feature_name)
-        open(src, 'w').write(ext.feature_check)
-        log.info("checking if %s is compilable" % ext.feature_name)
-        try:
-            [obj] = self.compiler.compile([src],
-                    macros=ext.define_macros+[(undef,) for undef in ext.undef_macros],
-                    include_dirs=ext.include_dirs,
-                    extra_postargs=(ext.extra_compile_args or []),
-                    depends=ext.depends)
-        except CompileError:
-            log.warn("")
-            log.warn("%s is not found or a compiler error: forcing --%s"
-                     % (ext.feature_name, ext.neg_option_name))
-            log.warn("(if %s is installed correctly, you may need to"
-                    % ext.feature_name)
-            log.warn(" specify the option --include-dirs or uncomment and")
-            log.warn(" modify the parameter include_dirs in setup.cfg)")
-            open(cache, 'w').write('0\n')
-            return False
-        prog = 'check_%s' % ext.feature_name
-        log.info("checking if %s is linkable" % ext.feature_name)
-        try:
-            self.compiler.link_executable([obj], prog,
-                    output_dir=self.build_temp,
-                    libraries=ext.libraries,
-                    library_dirs=ext.library_dirs,
-                    runtime_library_dirs=ext.runtime_library_dirs,
-                    extra_postargs=(ext.extra_link_args or []))
-        except LinkError:
-            log.warn("")
-            log.warn("%s is not found or a linker error: forcing --%s"
-                     % (ext.feature_name, ext.neg_option_name))
-            log.warn("(if %s is installed correctly, you may need to"
-                    % ext.feature_name)
-            log.warn(" specify the option --library-dirs or uncomment and")
-            log.warn(" modify the parameter library_dirs in setup.cfg)")
-            open(cache, 'w').write('0\n')
-            return False
-        open(cache, 'w').write('1\n')
-        return True
+            try:
+                self.build_extension(ext)
+            except (CompileError, LinkError):
+                if with_ext is not None:
+                    raise
+                log.warn("Error compiling module, falling back to pure Python")
 
 
 class bdist_rpm(_bdist_rpm):
@@ -341,5 +299,5 @@ if __name__ == '__main__':
 
         distclass=Distribution,
         cmdclass=cmdclass,
+        python_requires='>=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     )
-
