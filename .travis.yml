@@ -36,7 +36,7 @@ before_script:
   && cd "$TRAVIS_BUILD_DIR"
 
 install:
-    - pip install --install-option="--no-cython-compile" https://github.com/cython/cython/archive/d902b7cf24eba5bc5be9e8001d639abd912adf6d.zip
+    - pip install --install-option="--no-cython-compile" https://github.com/cython/cython/archive/1834457912db7c810eb74dad41ee51241c4d0261.zip
     - pip install tox
 
 script: tox
